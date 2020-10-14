@@ -12,7 +12,9 @@ client.once('ready', () => {
 });
 
 const sources = [];
-const prefixes = ['https://i.imgur.com', 'https.i.redd.it'];
+const prefixes = ['https://i.imgur.com', 'https://i.redd.it'];
+const urlSuffix = ['hot.json?', 'top.json?'];
+const timing = ['day', 'month', 'year', 'all'];
 
 client.on('message', message => {
     const args = message.content.trim().split(' ');
@@ -50,7 +52,8 @@ client.on('message', message => {
             return;
          }
     }
-
+    
+    //Helper functions for arg commands
     function addNew(subreddit){
         var url = 'https://www.reddit.com/r/' + subreddit + '/top.json';
         if(sources.includes(subreddit.toLowerCase())){
@@ -80,8 +83,44 @@ client.on('message', message => {
 
     }
 
+    //Check to see if there are any listed sources
     if(sources.length == 0){
         message.channel.send('You need at least one subreddit source');
         return;
     }
+
+    var url = 'https://www.reddit.com/r/' + sources[Math.floor(Math.random() * sources.length)] + '/' + urlSuffix[Math.floor(Math.random() * urlSuffix.length)] + 't=' + timing[Math.floor(Math.random() * timing.length)];
+    var settings = { method:'Get' };
+    fetch(url, settings).then(res => res.json()).then(jsonData => {
+        let arr = [];
+        let subData = jsonData.data.children;
+        for(let i = 0; i < subData.length; i++){
+            let obj = subData[i];
+            let imgUrl = obj.data.url;
+            let prefixGood = checkPrefix(imgUrl);
+            if(!imgUrl.includes('gif') && checkPrefix(imgUrl)){
+                arr.push(imgUrl);
+            }
+        }
+        if(arr.length == 0){
+            message.channel.send('No pictures found');
+            return;
+        }
+        message.channel.send({
+            files:[arr[Math.floor(Math.random() * arr.length)]]
+        });
+    }).catch(function(err){
+        console.log(err);
+        message.channel.send('there was an error fetching data');
+    });
+
+    function checkPrefix(imgUrl){
+        for(prefix in prefixes){
+            if(imgUrl.startsWith(prefixes[prefix])){
+                return true;
+            }
+        }
+        return false;
+    }
+
 });
