@@ -58,6 +58,11 @@ client.on('message', message => {
              message.channel.send('NSFW filter set to ' + nsfwFilter);
              return;
          }
+
+         if(arg === 'help'){
+             message.channel.send(generateHelp());
+             return;
+         }
     }
     
     //Helper functions for arg commands
@@ -118,9 +123,7 @@ client.on('message', message => {
             message.channel.send('Image found is NSFW. Please go to an NSFW chat.');
             return;
         }
-        message.channel.send({
-            files:[dataObj.data.url]
-        });
+        message.channel.send(buildEmbed(dataObj.data));
     }).catch(function(err){
         console.log(err);
         message.channel.send('there was an error fetching data');
@@ -133,6 +136,28 @@ client.on('message', message => {
             }
         }
         return false;
+    }
+
+    function generateHelp(){
+        let out = 'Reddit Picture Grabber\n';
+
+        out += "Use the keyword 'redditpic' to pull a random image from a random subreddit set by you\n\n";
+        out += 'USEFUL COMMANDS:\n';
+        out += 'redditpic add <subreddit> - adds subreddit as source (r/ not required)\n';
+        out += 'redditpic remove <subreddit> - removes subreddit as source (r/ not required)\n';
+        out += 'redditpic sources - return a list of subreddit sources\n';
+        out += 'redditpic nsfw - sets nsfw filter on or off (default is off)';
+        out += 'redditpic help - return help';
+
+        return out;
+    }
+
+    function buildEmbed(dataObj){
+        return new Discord.MessageEmbed()
+            .setColor('#e86a02')
+            .setTitle(dataObj.title)
+            .setFooter('r/' + dataObj.subreddit)
+            .setImage(dataObj.url);
     }
 
 });
