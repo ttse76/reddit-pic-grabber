@@ -15,6 +15,7 @@ const sources = [];
 const prefixes = ['https://i.imgur.com', 'https://i.redd.it'];
 const urlSuffix = ['hot.json?', 'top.json?'];
 const timing = ['day', 'month', 'year', 'all'];
+var nsfwFilter = false;
 
 client.on('message', message => {
     const args = message.content.trim().split(' ');
@@ -50,6 +51,12 @@ client.on('message', message => {
             }
             message.channel.send(out);
             return;
+         }
+         
+         if(arg === 'nsfw'){
+             nsfwFilter = !nsfwFilter;
+             message.channel.send('NSFW filter set to ' + nsfwFilter);
+             return;
          }
     }
     
@@ -89,6 +96,7 @@ client.on('message', message => {
         return;
     }
 
+    //fetches image from reddit
     var url = 'https://www.reddit.com/r/' + sources[Math.floor(Math.random() * sources.length)] + '/' + urlSuffix[Math.floor(Math.random() * urlSuffix.length)] + 't=' + timing[Math.floor(Math.random() * timing.length)];
     var settings = { method:'Get' };
     fetch(url, settings).then(res => res.json()).then(jsonData => {
@@ -97,17 +105,21 @@ client.on('message', message => {
         for(let i = 0; i < subData.length; i++){
             let obj = subData[i];
             let imgUrl = obj.data.url;
-            let prefixGood = checkPrefix(imgUrl);
             if(!imgUrl.includes('gif') && checkPrefix(imgUrl)){
-                arr.push(imgUrl);
+                arr.push(obj);
             }
         }
         if(arr.length == 0){
             message.channel.send('No pictures found');
             return;
         }
+        let dataObj = arr[Math.floor(Math.random() * arr.length)];
+        if(nsfwFilter && dataObj.data.over_18 && !message.channel.nsfw){
+            message.channel.send('Image found is NSFW. Please go to an NSFW chat.');
+            return;
+        }
         message.channel.send({
-            files:[arr[Math.floor(Math.random() * arr.length)]]
+            files:[dataObj.data.url]
         });
     }).catch(function(err){
         console.log(err);
